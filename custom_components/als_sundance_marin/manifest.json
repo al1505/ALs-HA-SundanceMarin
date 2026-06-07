@@ -1,6 +1,6 @@
 {
   "domain": "als_sundance_marin",
-  "name": "Sundance Marin",
+  "name": "ALs Sundance Marin 880",
   "version": "1.0.0",
   "codeowners": ["@al1505"],
   "config_flow": true,

@@ -23,8 +23,8 @@ class SundanceEntity(CoordinatorEntity[SundanceCoordinator]):
         super().__init__(coordinator)
         self._attr_unique_id = f"als_sundance_{key}"
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, "sundance_780")},
-            name="Sundance Marin 780",
+            identifiers={(DOMAIN, "als_sundance_880")},
+            name="ALs Sundance Marin 880",
             model="Sundance Marin 780",
             manufacturer="Sundance Spas / Balboa",
             configuration_url=f"http://{coordinator.host}",

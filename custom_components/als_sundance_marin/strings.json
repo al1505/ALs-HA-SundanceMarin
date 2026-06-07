@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Sundance Marin verbinden",
+        "title": "ALs Sundance Marin 880 verbinden",
         "data": {
           "host": "IP-Adresse (EW11-Bridge)",
           "port": "Port"
@@ -15,7 +15,7 @@
       "unknown": "Unbekannter Fehler"
     },
     "abort": {
-      "already_configured": "Sundance Marin ist bereits eingerichtet."
+      "already_configured": "ALs Sundance Marin 880 ist bereits eingerichtet."
     }
   }
 }
