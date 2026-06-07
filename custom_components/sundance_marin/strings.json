@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sundance Marin verbinden",
+        "data": {
+          "host": "IP-Adresse (EW11-Bridge)",
+          "port": "Port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen — IP-Adresse und Port prüfen.",
+      "timeout": "Keine Statusdaten empfangen — Spa eingeschaltet und EW11 erreichbar?",
+      "unknown": "Unbekannter Fehler"
+    },
+    "abort": {
+      "already_configured": "Sundance Marin ist bereits eingerichtet."
+    }
+  }
+}

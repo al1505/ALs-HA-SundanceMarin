@@ -1,0 +1,12 @@
+{
+  "domain": "sundance_marin",
+  "name": "Sundance Marin",
+  "version": "1.0.0",
+  "codeowners": ["@al1505"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/al1505/ALs-HA-SundanceMarin",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/al1505/ALs-HA-SundanceMarin/issues",
+  "requirements": []
+}

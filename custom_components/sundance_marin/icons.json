@@ -1,0 +1,24 @@
+{
+  "entity": {
+    "climate": {
+      "spa": { "default": "mdi:hot-tub" }
+    },
+    "switch": {
+      "pump1":  { "default": "mdi:pump" },
+      "pump2":  { "default": "mdi:pump" },
+      "blower": { "default": "mdi:fan" }
+    },
+    "light": {
+      "inner_light": { "default": "mdi:lightbulb" },
+      "outer_light": { "default": "mdi:lightbulb-outline" }
+    },
+    "binary_sensor": {
+      "heating":   { "default": "mdi:fire" },
+      "circ_pump": { "default": "mdi:rotate-360" }
+    },
+    "select": {
+      "heat_mode": { "default": "mdi:thermostat" }
+    }
+  },
+  "services": {}
+}
