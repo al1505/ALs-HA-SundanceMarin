@@ -520,8 +520,9 @@ this.shadowRoot.innerHTML = `<style>${CSS}</style>${HTML}`;
 | Ressource | Adresse |
 |---|---|
 | EW11 (Spa-Bridge) | `192.168.3.128:8899` |
-| Home Assistant | `192.168.15.117:8123` |
-| Windows-PC (SMB-Mount `H:\`) | `192.168.15.117` |
+| Home Assistant | `192.168.15.11:8123` |
+| OhmPilot (alte Node.js-Version) | `192.168.15.117` |
+| Windows-PC (SMB-Mount `H:\`) | `192.168.15.117` (OhmPilot-Filesystem) |
 
 ---
 
