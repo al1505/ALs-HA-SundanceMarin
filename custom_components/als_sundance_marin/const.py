@@ -1,4 +1,4 @@
-DOMAIN = "sundance_marin"
+DOMAIN = "als_sundance_marin"
 
 DEFAULT_HOST = "192.168.3.128"
 DEFAULT_PORT = 8899

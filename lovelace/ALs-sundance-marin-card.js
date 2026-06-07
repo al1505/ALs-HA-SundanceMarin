@@ -2,7 +2,7 @@
 // Sundance Marin Card — HA Lovelace Custom Card
 // Steuerkarte für Sundance Marin 780 Spa (via Sundance Marin Integration)
 // Version: 1.0.0
-// Install: /config/www/community/sundance-marin-card/sundance-marin-card.js
+// Install: /config/www/community/ALs-sundance-marin-card/ALs-sundance-marin-card.js
 // ============================================================================
 
 const SM_VERSION = "1.0.0";
@@ -60,7 +60,7 @@ class SundanceMarinCard extends HTMLElement {
   }
 
   static getConfigElement() {
-    return document.createElement("sundance-marin-card-editor");
+    return document.createElement("als-sundance-marin-card-editor");
   }
 
   setConfig(config) {
@@ -464,7 +464,7 @@ ${this._css()}
   }
 }
 
-customElements.define("sundance-marin-card", SundanceMarinCard);
+customElements.define("als-sundance-marin-card", SundanceMarinCard);
 
 // ─── Visual editor ──────────────────────────────────────────────────────────
 
@@ -535,13 +535,13 @@ class SundanceMarinCardEditor extends HTMLElement {
   }
 }
 
-customElements.define("sundance-marin-card-editor", SundanceMarinCardEditor);
+customElements.define("als-sundance-marin-card-editor", SundanceMarinCardEditor);
 
 // ─── HACS / HA card registration ────────────────────────────────────────────
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "sundance-marin-card",
+  type: "als-sundance-marin-card",
   name: "Sundance Marin Card",
   description: "Steuerkarte für Sundance Marin 780 Spa",
   preview: true,

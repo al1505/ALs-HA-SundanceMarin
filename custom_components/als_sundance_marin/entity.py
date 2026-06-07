@@ -21,7 +21,7 @@ class SundanceEntity(CoordinatorEntity[SundanceCoordinator]):
         key: str,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"sundance_{key}"
+        self._attr_unique_id = f"als_sundance_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, "sundance_780")},
             name="Sundance Marin 780",
