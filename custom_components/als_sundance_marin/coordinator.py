@@ -34,8 +34,9 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         self._buf = b""
         self._reconnect_attempt = 0
         self._first_data_event = asyncio.Event()
-        # Optimistic effect state — spa provides no readback for color selections
-        self.light_effect: str | None = None
+        # Optimistic state — not available in Balboa status frame
+        self.light_effect: str | None = None   # inner light color
+        self.light2_on: bool = False            # outer light (no status frame bit)
 
     # ── Connection ────────────────────────────────────────────────────────────
 
@@ -118,15 +119,16 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         """Send a Balboa command frame with 500 ms bus-arbitration guard."""
         async with self._cmd_lock:
             if self._writer is None:
-                _LOGGER.warning("Cannot send command: not connected")
+                _LOGGER.warning("send_command: writer is None — not connected")
                 return
             elapsed = self.hass.loop.time() - self._last_cmd_at
             if elapsed < MIN_CMD_INTERVAL:
                 await asyncio.sleep(MIN_CMD_INTERVAL - elapsed)
+            _LOGGER.debug("TX: %s", frame.hex())
             try:
                 self._writer.write(frame)
                 await self._writer.drain()
             except Exception as exc:  # noqa: BLE001
-                _LOGGER.error("Send error: %s", exc)
+                _LOGGER.error("send_command error: %s", exc)
             finally:
                 self._last_cmd_at = self.hass.loop.time()

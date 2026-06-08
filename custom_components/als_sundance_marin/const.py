@@ -16,20 +16,21 @@ STATUS_M2 = 0xAF
 # Minimum data-byte count to accept a frame (spa pack = 45, topside panel = 27)
 MIN_STATUS_DLEN = 40
 
-# Byte offsets into d = frame[4:-2] — verified from live RS-485 trace 2026-05-21/22/23
+# Byte offsets into d = frame[4:-2] — verified from live RS-485 trace 2026-05-21/22/23/25
 OFF_CURRENT_TEMP = 3   # raw/2 = °C; 0xFF = display off / unknown
-OFF_HEATING      = 10  # bits 4-5 non-zero → heating active
+OFF_HEATING      = 10  # (unused — heating derived from temp comparison)
 OFF_PUMP_STATUS  = 11  # bits 3-4 = circ pump speed (>0 → running)
 OFF_PUMPS        = 12  # bit 1 = pump1; bits 2-3 = pump2 speed
-OFF_LIGHT        = 13  # non-zero → Innenlicht on
+OFF_LIGHT        = 13  # non-zero → Innenlicht on via physical button
+OFF_LIGHT_ST     = 24  # bit 2 (0x04) → Innenlicht on via SmartTub cmd=0x31 (verified 2026-05-25)
 OFF_MOTOR_FLAGS  = 14  # bits 2-3 = blower speed (>0 → on)
-OFF_LIGHT2       = 6   # bit 3 (0x08) → Außenlicht on (hypothesis, pending dedicated trace)
-OFF_HEAT_MODE    = 15  # bits 0-1: 0=Auto, 1=Nacht, 2=Smart
+OFF_HEAT_MODE    = 15  # bits 0-1: 0=Tag, 1=Nacht, 2=Smart
 OFF_SET_TEMP     = 21  # raw/2 = °C
 
-HEAT_MODE_NAMES = ["Auto", "Nacht", "Smart"]
+HEAT_MODE_NAMES = ["Tag", "Nacht", "Smart", "Aus"]
 
-LIGHT_EFFECTS = ["Hellblau", "Grün", "Dunkelblau", "Gelb", "Violett", "Rot", "Rainbow"]
+# Inner light color effects — verified from live RS-485 trace 2026-05-25
+LIGHT_EFFECTS = ["Rot", "Grün", "Hellblau", "Dunkelblau", "Violett", "Gelb", "Rainbow"]
 
 TOGGLE_CODES: dict[str, int] = {
     "PUMP1":  0x04,

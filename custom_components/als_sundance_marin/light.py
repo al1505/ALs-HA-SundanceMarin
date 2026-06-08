@@ -14,14 +14,21 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .balboa import build_color, build_toggle
+from .balboa import (
+    build_inner_light_color,
+    build_inner_light_rainbow,
+    build_light_off,
+    build_light_on,
+    build_light2_off,
+    build_light2_on,
+)
 from .const import DOMAIN, LIGHT_EFFECTS
 from .coordinator import SundanceCoordinator
 from .entity import SundanceEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-_TOGGLE_DELAY = 0.6  # seconds between toggle-on and color command
+_COLOR_DELAY = 0.6  # seconds between light-on and color command
 
 
 async def async_setup_entry(
@@ -35,11 +42,7 @@ async def async_setup_entry(
 
 
 class SundanceInnerLight(SundanceEntity, LightEntity):
-    """Innenlicht — on/off + 7 color effects.
-
-    Color readback is not possible via the Balboa protocol; the active effect
-    is stored optimistically in the coordinator and reset on next toggle.
-    """
+    """Innenlicht — on/off + color effects via cmd=0x31 (verified 2026-05-25)."""
 
     _attr_translation_key = "inner_light"
     _attr_name = "Innenlicht"
@@ -65,22 +68,29 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
 
         if effect:
             if not currently_on:
-                await self.coordinator.send_command(build_toggle("LIGHT"))
-                await asyncio.sleep(_TOGGLE_DELAY)
-            await self.coordinator.send_command(build_color(effect))
+                await self.coordinator.send_command(build_light_on())
+                await asyncio.sleep(_COLOR_DELAY)
+            if effect == "Rainbow":
+                await self.coordinator.send_command(build_inner_light_rainbow())
+            else:
+                await self.coordinator.send_command(build_inner_light_color(effect))
             self.coordinator.light_effect = effect
         elif not currently_on:
-            await self.coordinator.send_command(build_toggle("LIGHT"))
+            await self.coordinator.send_command(build_light_on())
             self.coordinator.light_effect = None
 
     async def async_turn_off(self, **kwargs) -> None:
         if self.is_on:
-            await self.coordinator.send_command(build_toggle("LIGHT"))
+            await self.coordinator.send_command(build_light_off())
             self.coordinator.light_effect = None
 
 
 class SundanceOuterLight(SundanceEntity, LightEntity):
-    """Außenlicht — on/off only, no color control."""
+    """Außenlicht — on/off only.
+
+    The outer light state is NOT in the Balboa status frame (confirmed 2026-05-25).
+    State is tracked optimistically in coordinator.light2_on.
+    """
 
     _attr_translation_key = "outer_light"
     _attr_name = "Außenlicht"
@@ -92,12 +102,16 @@ class SundanceOuterLight(SundanceEntity, LightEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self.coordinator.data.get("light2") if self.coordinator.data else None
+        return self.coordinator.light2_on
 
     async def async_turn_on(self, **kwargs) -> None:
-        if not self.is_on:
-            await self.coordinator.send_command(build_toggle("LIGHT2"))
+        if not self.coordinator.light2_on:
+            await self.coordinator.send_command(build_light2_on())
+            self.coordinator.light2_on = True
+            self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
-        if self.is_on:
-            await self.coordinator.send_command(build_toggle("LIGHT2"))
+        if self.coordinator.light2_on:
+            await self.coordinator.send_command(build_light2_off())
+            self.coordinator.light2_on = False
+            self.async_write_ha_state()
