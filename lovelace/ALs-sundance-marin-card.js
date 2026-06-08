@@ -5,7 +5,7 @@
 // Install: /config/www/community/ALs-sundance-marin-card/ALs-sundance-marin-card.js
 // ============================================================================
 
-const SM_VERSION = "1.1.0";
+const SM_VERSION = "1.2.0";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -53,6 +53,7 @@ class SundanceMarinCard extends HTMLElement {
     this._pendingToggles = new Map(); // entityId → { state: bool, until: timestamp }
     this._pendingSetTemp = null;      // optimistic pending setpoint (cleared when HA confirms)
     this._pendingSetTempUntil = 0;    // expiry timestamp for _pendingSetTemp
+    this._lastFp = null;              // fingerprint of last rendered HA state
 
     // Single persistent click handler — survives innerHTML re-renders
     this.shadowRoot.addEventListener("click", (e) => this._onClick(e));
@@ -72,12 +73,37 @@ class SundanceMarinCard extends HTMLElement {
     this._pendingToggles = new Map();
     this._pendingSetTemp = null;
     this._pendingSetTempUntil = 0;
+    this._lastFp = null;
     this._render();
   }
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    // Only re-render when the displayed values actually changed.
+    // The spa sends status frames every ~1 s; without this guard every frame
+    // would replace the entire innerHTML and reset CSS hover/transition states,
+    // causing visible pulsing on buttons the user is interacting with.
+    const fp = this._fingerprint();
+    if (fp !== this._lastFp) {
+      this._lastFp = fp;
+      this._render();
+    }
+  }
+
+  _fingerprint() {
+    if (!this._cfg || !this._hass) return "";
+    const cfg = this._cfg;
+    const _v = (id) => {
+      const s = this._hass.states[id];
+      if (!s) return "?";
+      const a = s.attributes;
+      return `${s.state}|${a.current_temperature ?? ""}|${a.temperature ?? ""}|${a.effect ?? ""}`;
+    };
+    return [
+      cfg.climate_entity, cfg.pump1_entity, cfg.pump2_entity,
+      cfg.blower_entity, cfg.inner_light_entity, cfg.outer_light_entity,
+      cfg.heating_entity, cfg.circ_pump_entity, cfg.heat_mode_entity,
+    ].map(_v).join(",");
   }
 
   // ── State helpers ──────────────────────────────────────────────────────────
