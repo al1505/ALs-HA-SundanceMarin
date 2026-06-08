@@ -5,7 +5,7 @@
 // Install: /config/www/community/ALs-sundance-marin-card/ALs-sundance-marin-card.js
 // ============================================================================
 
-const SM_VERSION = "1.0.0";
+const SM_VERSION = "1.1.0";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -49,7 +49,10 @@ class SundanceMarinCard extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this._hass = null;
     this._cfg  = null;
-    this._spDelta = 0; // local setpoint adjustment before SET is pressed
+    this._spDelta = 0;                // local setpoint adjustment before SET is pressed
+    this._pendingToggles = new Map(); // entityId → { state: bool, until: timestamp }
+    this._pendingSetTemp = null;      // optimistic pending setpoint (cleared when HA confirms)
+    this._pendingSetTempUntil = 0;    // expiry timestamp for _pendingSetTemp
 
     // Single persistent click handler — survives innerHTML re-renders
     this.shadowRoot.addEventListener("click", (e) => this._onClick(e));
@@ -66,6 +69,9 @@ class SundanceMarinCard extends HTMLElement {
   setConfig(config) {
     this._cfg = { ...SM_DEFAULTS, ...config };
     this._spDelta = 0;
+    this._pendingToggles = new Map();
+    this._pendingSetTemp = null;
+    this._pendingSetTempUntil = 0;
     this._render();
   }
 
@@ -96,15 +102,34 @@ class SundanceMarinCard extends HTMLElement {
     const setTempBase = climate?.attributes?.temperature ?? null;
     const effectiveSP = setTempBase != null ? +(setTempBase + this._spDelta).toFixed(1) : null;
 
+    // Expire pending toggles when HA confirms the expected state or timeout reached
+    const now = Date.now();
+    for (const [id, p] of this._pendingToggles) {
+      if ((this._s(id)?.state === "on") === p.state || now > p.until) {
+        this._pendingToggles.delete(id);
+      }
+    }
+
+    // Expire pending setpoint when HA confirms or timeout reached
+    if (this._pendingSetTemp !== null) {
+      if (setTempBase === this._pendingSetTemp || now > this._pendingSetTempUntil) {
+        this._pendingSetTemp = null;
+      }
+    }
+    const displaySP = this._pendingSetTemp !== null ? this._pendingSetTemp : effectiveSP;
+
     const heatingOn  = heating?.state === "on";
     const circOn     = circPump?.state === "on";
     const innerOn    = innerLight?.state === "on";
     const outerOn    = this._on(this._cfg.outer_light_entity);
     const activeEffect = innerLight?.attributes?.effect ?? null;
 
-    const pump1On  = this._on(this._cfg.pump1_entity);
-    const pump2On  = this._on(this._cfg.pump2_entity);
-    const blowerOn = this._on(this._cfg.blower_entity);
+    const pump1Pend = this._pendingToggles.get(this._cfg.pump1_entity);
+    const pump2Pend = this._pendingToggles.get(this._cfg.pump2_entity);
+    const blowerPend = this._pendingToggles.get(this._cfg.blower_entity);
+    const pump1On  = pump1Pend ? pump1Pend.state : this._on(this._cfg.pump1_entity);
+    const pump2On  = pump2Pend ? pump2Pend.state : this._on(this._cfg.pump2_entity);
+    const blowerOn = blowerPend ? blowerPend.state : this._on(this._cfg.blower_entity);
 
     const ts = new Date().toLocaleTimeString("de", {
       hour: "2-digit", minute: "2-digit", second: "2-digit",
@@ -137,7 +162,7 @@ ${this._css()}
       <div class="sp-block">
         <div class="sp-ctrl">
           <button class="btn-round" data-action="adj-sp" data-value="-0.5">−</button>
-          <span class="sp-val">${effectiveSP != null ? effectiveSP.toFixed(1) + "°C" : "—"}</span>
+          <span class="sp-val">${displaySP != null ? displaySP.toFixed(1) + "°C" : "—"}</span>
           <button class="btn-round" data-action="adj-sp" data-value="0.5">+</button>
         </div>
         <button class="btn-set" data-action="send-set-temp">SET</button>
@@ -220,7 +245,7 @@ ${this._css()}
   </div>
 
   <div class="status-bar">
-    Stand: ${ts}${curTemp != null ? ` · ${curTemp.toFixed(1)}°C → ${effectiveSP != null ? effectiveSP.toFixed(1) + "°C" : "—"}` : ""}
+    Stand: ${ts}${curTemp != null ? ` · ${curTemp.toFixed(1)}°C → ${displaySP != null ? displaySP.toFixed(1) + "°C" : "—"}` : ""}
   </div>
 
 </div>`;
@@ -263,13 +288,27 @@ ${this._css()}
       temperature: newTemp,
     }).catch(() => {});
     this._spDelta = 0;
+    this._pendingSetTemp = newTemp;
+    this._pendingSetTempUntil = Date.now() + 10000;
     this._render();
   }
 
   _toggleSwitch(entityId) {
     if (!this._hass || !entityId) return;
-    const svc = this._s(entityId)?.state === "on" ? "turn_off" : "turn_on";
-    this._hass.callService("switch", svc, { entity_id: entityId }).catch(() => {});
+    // Debounce: ignore click if a pending toggle is still in flight
+    const pending = this._pendingToggles.get(entityId);
+    if (pending && Date.now() < pending.until) return;
+    const isOn = this._s(entityId)?.state === "on";
+    this._pendingToggles.set(entityId, { state: !isOn, until: Date.now() + 5000 });
+    this._hass.callService("switch", isOn ? "turn_off" : "turn_on", { entity_id: entityId }).catch(() => {});
+    this._render();
+    // Fallback: clear pending state after 5 s if HA never confirmed
+    setTimeout(() => {
+      if (this._pendingToggles.has(entityId)) {
+        this._pendingToggles.delete(entityId);
+        this._render();
+      }
+    }, 5000);
   }
 
   _setColor(colorName) {
