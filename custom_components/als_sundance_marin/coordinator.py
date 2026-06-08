@@ -37,6 +37,8 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         # Optimistic state — not available in Balboa status frame
         self.light_effect: str | None = None   # inner light color
         self.light2_on: bool = False            # outer light (no status frame bit)
+        self.inner_brightness: int = 100        # inner light brightness % (last sent value)
+        self.outer_brightness: int = 100        # outer light brightness % (last sent value)
 
     # ── Connection ────────────────────────────────────────────────────────────
 

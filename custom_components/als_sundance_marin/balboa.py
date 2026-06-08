@@ -183,3 +183,22 @@ def build_inner_light_color(color_name: str) -> bytes:
 def build_inner_light_rainbow() -> bytes:
     """Activate inner light rainbow mode (cmd=0x31 d0=0x42, verified 2026-05-25)."""
     return _build_cmd31(0x42, 0x81, 0x00, 0x00)
+
+
+def build_inner_light_brightness(brightness_pct: int) -> bytes:
+    """Set inner light brightness 0–100 % (cmd=0x31 d0=0x43, verified 2026-05-25).
+
+    brightness_pct=0 turns the light off (frame 7e0d11bf314381000000000000be7e ✓).
+    """
+    bright = max(0, min(100, round(brightness_pct)))
+    return _build_cmd31(0x43, 0x81, 0x00, bright)
+
+
+def build_outer_light_brightness(brightness_pct: int) -> bytes:
+    """Set outer light brightness 0–100 % (cmd=0x31 d0=0x43 d1=0x82, verified 2026-05-25).
+
+    brightness_pct=100 → frame 7e0d11bf314382000000006400797e ✓ (same as LIGHT2_ON_FRAME).
+    brightness_pct=0   → frame 7e0d11bf314382000000000000d87e ✓ (same as LIGHT2_OFF_FRAME).
+    """
+    bright = max(0, min(100, round(brightness_pct)))
+    return _build_cmd31(0x43, 0x82, 0x00, bright)

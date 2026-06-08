@@ -5,6 +5,7 @@ import asyncio
 import logging
 
 from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
     ATTR_EFFECT,
     ColorMode,
     LightEntity,
@@ -15,12 +16,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .balboa import (
+    build_inner_light_brightness,
     build_inner_light_color,
     build_inner_light_rainbow,
     build_light_off,
     build_light_on,
     build_light2_off,
-    build_light2_on,
+    build_outer_light_brightness,
 )
 from .const import DOMAIN, LIGHT_EFFECTS
 from .coordinator import SundanceCoordinator
@@ -42,12 +44,12 @@ async def async_setup_entry(
 
 
 class SundanceInnerLight(SundanceEntity, LightEntity):
-    """Innenlicht — on/off + color effects via cmd=0x31 (verified 2026-05-25)."""
+    """Innenlicht — brightness + color effects via cmd=0x31 (verified 2026-05-25)."""
 
     _attr_translation_key = "inner_light"
     _attr_name = "Innenlicht"
-    _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
     _attr_effect_list = LIGHT_EFFECTS
     _attr_supported_features = LightEntityFeature.EFFECT
 
@@ -59,11 +61,18 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
         return self.coordinator.data.get("light") if self.coordinator.data else None
 
     @property
+    def brightness(self) -> int | None:
+        if not self.is_on:
+            return None
+        return round(self.coordinator.inner_brightness / 100 * 255)
+
+    @property
     def effect(self) -> str | None:
         return self.coordinator.light_effect
 
     async def async_turn_on(self, **kwargs) -> None:
         effect = kwargs.get(ATTR_EFFECT)
+        brightness_ha = kwargs.get(ATTR_BRIGHTNESS)
         currently_on = self.is_on
 
         if effect:
@@ -75,9 +84,14 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
             else:
                 await self.coordinator.send_command(build_inner_light_color(effect))
             self.coordinator.light_effect = effect
-        elif not currently_on:
-            await self.coordinator.send_command(build_light_on())
+        elif brightness_ha is not None:
+            pct = round(brightness_ha / 255 * 100)
+            await self.coordinator.send_command(build_inner_light_brightness(pct))
+            self.coordinator.inner_brightness = pct
             self.coordinator.light_effect = None
+        elif not currently_on:
+            pct = self.coordinator.inner_brightness or 100
+            await self.coordinator.send_command(build_inner_light_brightness(pct))
 
     async def async_turn_off(self, **kwargs) -> None:
         if self.is_on:
@@ -86,16 +100,15 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
 
 
 class SundanceOuterLight(SundanceEntity, LightEntity):
-    """Außenlicht — on/off only.
+    """Außenlicht — brightness control via cmd=0x31 d1=0x82 (verified 2026-05-25).
 
-    The outer light state is NOT in the Balboa status frame (confirmed 2026-05-25).
-    State is tracked optimistically in coordinator.light2_on.
+    State is NOT in the Balboa status frame; tracked optimistically in coordinator.
     """
 
     _attr_translation_key = "outer_light"
     _attr_name = "Außenlicht"
-    _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
 
     def __init__(self, coordinator: SundanceCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "light2")
@@ -104,11 +117,19 @@ class SundanceOuterLight(SundanceEntity, LightEntity):
     def is_on(self) -> bool | None:
         return self.coordinator.light2_on
 
-    async def async_turn_on(self, **kwargs) -> None:
+    @property
+    def brightness(self) -> int | None:
         if not self.coordinator.light2_on:
-            await self.coordinator.send_command(build_light2_on())
-            self.coordinator.light2_on = True
-            self.async_write_ha_state()
+            return None
+        return round(self.coordinator.outer_brightness / 100 * 255)
+
+    async def async_turn_on(self, **kwargs) -> None:
+        brightness_ha = kwargs.get(ATTR_BRIGHTNESS)
+        pct = round(brightness_ha / 255 * 100) if brightness_ha is not None else (self.coordinator.outer_brightness or 100)
+        await self.coordinator.send_command(build_outer_light_brightness(pct))
+        self.coordinator.outer_brightness = pct
+        self.coordinator.light2_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
         if self.coordinator.light2_on:
