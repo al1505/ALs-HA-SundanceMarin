@@ -11,5 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: HACS Action
         uses: hacs/action@main
+        env:
+          REPOSITORY_REF: ${{ github.ref_name }}
         with:
           category: integration
