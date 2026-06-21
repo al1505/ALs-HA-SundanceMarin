@@ -29,6 +29,7 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._read_task: asyncio.Task | None = None
+        self._closing = False
         self._cmd_lock = asyncio.Lock()
         self._last_cmd_at: float = 0.0
         self._buf = b""
@@ -52,14 +53,23 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         _LOGGER.info("Connected to EW11 at %s:%s", self.host, self.port)
 
     async def async_disconnect(self) -> None:
-        """Close TCP connection and cancel reader task."""
+        """Tear down permanently (called on unload): stop reconnecting and close."""
+        self._closing = True
         if self._read_task and not self._read_task.done():
             self._read_task.cancel()
+        await self._close_writer()
+
+    async def _close_writer(self) -> None:
+        """Close the TCP writer without touching the read task.
+
+        Safe to call from inside the read task itself — unlike async_disconnect(),
+        it never cancels the running reader, so it can be used during reconnect.
+        """
         if self._writer:
             try:
                 self._writer.close()
                 await self._writer.wait_closed()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
         self._reader = None
         self._writer = None
@@ -97,23 +107,33 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
                         self._first_data_event.set()
                         self.async_set_updated_data(status)
 
+        except asyncio.CancelledError:
+            raise  # genuine cancellation (unload) — do not reconnect
         except Exception as exc:  # noqa: BLE001
             _LOGGER.error("Reader error: %s — reconnecting", exc)
 
-        await self._reconnect()
+        # Connection lost. Reconnect runs inline in this (ending) read task and
+        # must NOT cancel it — async_connect() spawns a fresh read task on success.
+        if not self._closing:
+            await self._reconnect()
 
     async def _reconnect(self) -> None:
-        """Close current connection and attempt to reconnect with backoff."""
-        await self.async_disconnect()
-        delay = _RECONNECT_DELAYS[min(self._reconnect_attempt, len(_RECONNECT_DELAYS) - 1)]
-        self._reconnect_attempt += 1
-        _LOGGER.info("Reconnecting in %ss (attempt %s)", delay, self._reconnect_attempt)
-        await asyncio.sleep(delay)
-        try:
-            await self.async_connect()
-        except OSError as exc:
-            _LOGGER.error("Reconnect failed: %s", exc)
-            await self._reconnect()
+        """Close the dead socket and reconnect with backoff.
+
+        Loops instead of recursing so repeated failures don't grow the stack.
+        Cancelled cleanly by async_disconnect() (unload) via _closing + task cancel.
+        """
+        await self._close_writer()
+        while not self._closing:
+            delay = _RECONNECT_DELAYS[min(self._reconnect_attempt, len(_RECONNECT_DELAYS) - 1)]
+            self._reconnect_attempt += 1
+            _LOGGER.info("Reconnecting in %ss (attempt %s)", delay, self._reconnect_attempt)
+            await asyncio.sleep(delay)
+            try:
+                await self.async_connect()
+                return
+            except OSError as exc:
+                _LOGGER.error("Reconnect failed: %s — retrying", exc)
 
     # ── Command sending ───────────────────────────────────────────────────────
 
