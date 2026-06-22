@@ -74,6 +74,12 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
         effect = kwargs.get(ATTR_EFFECT)
         brightness_ha = kwargs.get(ATTR_BRIGHTNESS)
 
+        # Optimistic state: update coordinator.data["light"] immediately so the
+        # frontend reflects "on" without waiting for the next Balboa status frame
+        # (same pattern as switch.py for pumps). Without this, the JS card reads
+        # a stale "off" state and subsequent clicks (e.g. OFF button) misbehave.
+        self.coordinator.set_optimistic("light", True)
+
         # On this spa (880) ONLY cmd 0x29 powers the light on; cmd 0x31 merely
         # adjusts colour/brightness of an already-on light and does NOT switch it
         # on (verified on live RS-485 2026-06-22). 0x29-ON is a discrete frame
@@ -100,6 +106,8 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
+        # Optimistic state: reflect "off" immediately (same pattern as async_turn_on).
+        self.coordinator.set_optimistic("light", False)
         # cmd 0x29-OFF (d1=0x13) is the only working OFF on this spa. Sent
         # unconditionally: the old `if self.is_on` guard read a stale frozen
         # state when the reader had died and silently dropped the command —

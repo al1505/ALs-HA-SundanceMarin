@@ -5,7 +5,7 @@
 // Served automatically by the integration; no manual resource entry needed.
 // ============================================================================
 
-const SM_VERSION = "1.5.0";
+const SM_VERSION = "1.5.1";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -198,17 +198,17 @@ ${this._css()}
         <button class="btn-set" data-action="send-set-temp">SET</button>
         <div class="temp-lbl">Ziel</div>
       </div>
-    </div>
-    <!-- Heizstatus + Zirkulation als kompakte Chips -->
-    <div class="status-chips">
-      <span class="chip${heatingOn ? " heating" : ""}">
-        <ha-icon icon="mdi:${heatingOn ? "fire" : "check-circle-outline"}"></ha-icon>
-        <span>${heatingOn ? "Heizt" : "Bereit"}</span>
-      </span>
-      <span class="chip${circOn ? " circ-on" : ""}">
-        <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
-        <span>Zirkulation ${circOn ? "läuft" : "aus"}</span>
-      </span>
+      <!-- Heizstatus + Zirkulation — rechts neben der Temperaturauswahl -->
+      <div class="status-col">
+        <span class="chip${heatingOn ? " heating" : ""}">
+          <ha-icon icon="mdi:${heatingOn ? "fire" : "check-circle-outline"}"></ha-icon>
+          <span>${heatingOn ? "Heizt" : "Bereit"}</span>
+        </span>
+        <span class="chip${circOn ? " circ-on" : ""}">
+          <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
+          <span>Zirkulation</span>
+        </span>
+      </div>
     </div>
   </div>
 
@@ -418,7 +418,7 @@ ${this._css()}
 }
 
 /* ── Temperature ── */
-.temp-row { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.temp-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .temp-val {
   font-size: 2.4rem; font-weight: 700;
   color: var(--primary-color); font-variant-numeric: tabular-nums; line-height: 1;
@@ -449,8 +449,11 @@ ${this._css()}
 .btn-set:hover { opacity: .85; }
 .btn-set:active { opacity: .7; }
 
-/* ── Status chips (Heizstatus + Zirkulation in Temperatur-Sektion) ── */
-.status-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+/* ── Status column (Heizstatus + Zirkulation rechts neben Temperaturauswahl) ── */
+.status-col {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-left: auto; flex-shrink: 0; justify-content: center;
+}
 .chip {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .72rem; padding: 3px 9px; border-radius: 20px;
