@@ -420,7 +420,7 @@ ${this._css()}
   font-size: 2.4rem; font-weight: 700;
   color: var(--primary-color); font-variant-numeric: tabular-nums; line-height: 1;
 }
-.temp-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.temp-row { display: flex; align-items: center; gap: 12px; }
 .sp-block { display: flex; flex-direction: column; gap: 4px; }
 .sp-ctrl  { display: flex; align-items: center; gap: 8px; }
 .btn-round {
