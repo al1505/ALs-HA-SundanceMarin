@@ -5,7 +5,7 @@
 // Served automatically by the integration; no manual resource entry needed.
 // ============================================================================
 
-const SM_VERSION = "1.5.3";
+const SM_VERSION = "1.5.4";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -185,8 +185,10 @@ ${this._css()}
   <div class="section">
     <div class="section-title">Temperatur</div>
     <div class="temp-split">
-      <div class="temp-left">
+      <div class="temp-col-cur">
         <div class="temp-val">${curTemp != null ? curTemp.toFixed(1) + " °C" : "—"}</div>
+      </div>
+      <div class="temp-col-sp">
         <div class="sp-block">
           <div class="sp-ctrl">
             <button class="btn-round" data-action="adj-sp" data-value="-0.5">−</button>
@@ -414,17 +416,25 @@ ${this._css()}
   color: var(--secondary-text-color); margin-bottom: 10px;
 }
 
-/* ── Temperature split (left: current + setpoint | right: status chips) ── */
-.temp-split { display: flex; align-items: stretch; }
-.temp-left  { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+/* ── Temperature 3-column split ── */
+.temp-split { display: flex; align-items: stretch; gap: 0; }
+.temp-col-cur {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding-right: 14px;
+}
+.temp-col-sp {
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 14px;
+  border-left: 1px solid var(--divider-color);
+}
 .temp-right {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 8px;
-  padding-left: 16px; margin-left: 16px;
+  padding-left: 14px;
   border-left: 1px solid var(--divider-color);
 }
 .temp-val {
-  font-size: 2.4rem; font-weight: 700;
+  font-size: 3.4rem; font-weight: 700;
   color: var(--primary-color); font-variant-numeric: tabular-nums; line-height: 1;
 }
 .sp-block { display: flex; flex-direction: column; gap: 4px; }
