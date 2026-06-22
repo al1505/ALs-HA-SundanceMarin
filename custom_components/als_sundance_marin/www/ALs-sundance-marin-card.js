@@ -1,11 +1,11 @@
 // ============================================================================
 // Sundance Marin Card — HA Lovelace Custom Card
 // Steuerkarte für Sundance Marin 880 Spa (via ALs Sundance Marin Integration)
-// Version: 1.4.0
+// Version: 1.5.0
 // Served automatically by the integration; no manual resource entry needed.
 // ============================================================================
 
-const SM_VERSION = "1.4.0";
+const SM_VERSION = "1.5.0";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -199,47 +199,54 @@ ${this._css()}
         <div class="temp-lbl">Ziel</div>
       </div>
     </div>
-    <div class="heating-badge${heatingOn ? " active" : ""}">
-      <ha-icon icon="mdi:${heatingOn ? "fire" : "fire-off"}"></ha-icon>
-      <span>${heatingOn ? "Heizt" : "Bereit"}</span>
+    <!-- Heizstatus + Zirkulation als kompakte Chips -->
+    <div class="status-chips">
+      <span class="chip${heatingOn ? " heating" : ""}">
+        <ha-icon icon="mdi:${heatingOn ? "fire" : "check-circle-outline"}"></ha-icon>
+        <span>${heatingOn ? "Heizt" : "Bereit"}</span>
+      </span>
+      <span class="chip${circOn ? " circ-on" : ""}">
+        <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
+        <span>Zirkulation ${circOn ? "läuft" : "aus"}</span>
+      </span>
     </div>
   </div>
 
-  <!-- Pumpen & Gebläse -->
-  <div class="section">
-    <div class="section-title">Pumpen &amp; Gebläse</div>
-    <div class="btn-row">
-      <button class="btn-toggle${pump1On ? " on" : ""}"
-              data-action="toggle-switch" data-entity="${_esc(this._cfg.pump1_entity)}">
-        <ha-icon icon="mdi:pump"></ha-icon><span>Düse 1</span>
-      </button>
-      <button class="btn-toggle${pump2On ? " on" : ""}"
-              data-action="toggle-switch" data-entity="${_esc(this._cfg.pump2_entity)}">
-        <ha-icon icon="mdi:pump"></ha-icon><span>Düse 2</span>
-      </button>
-      <button class="btn-toggle${blowerOn ? " on" : ""}"
-              data-action="toggle-switch" data-entity="${_esc(this._cfg.blower_entity)}">
-        <ha-icon icon="mdi:fan"></ha-icon><span>Gebläse</span>
-      </button>
+  <!-- Pumpen & Gebläse | Heizmodus — nebeneinander -->
+  <div class="split-section">
+    <div class="split-col">
+      <div class="section-title">Pumpen &amp; Gebläse</div>
+      <div class="btn-col">
+        <button class="btn-list${pump1On ? " on" : ""}"
+                data-action="toggle-switch" data-entity="${_esc(this._cfg.pump1_entity)}">
+          <ha-icon icon="mdi:pump"></ha-icon><span>Düse 1</span>
+        </button>
+        <button class="btn-list${pump2On ? " on" : ""}"
+                data-action="toggle-switch" data-entity="${_esc(this._cfg.pump2_entity)}">
+          <ha-icon icon="mdi:pump"></ha-icon><span>Düse 2</span>
+        </button>
+        <button class="btn-list${blowerOn ? " on" : ""}"
+                data-action="toggle-switch" data-entity="${_esc(this._cfg.blower_entity)}">
+          <ha-icon icon="mdi:fan"></ha-icon><span>Gebläse</span>
+        </button>
+      </div>
     </div>
-  </div>
-
-  <!-- Heizmodus -->
-  <div class="section">
-    <div class="section-title">Heizmodus</div>
-    <div class="btn-row">
-      <button class="btn-toggle${heatModeState === "Tag" ? " on" : ""}"
-              data-action="set-heat-mode" data-value="Tag">
-        <ha-icon icon="mdi:weather-sunny"></ha-icon><span>Tag</span>
-      </button>
-      <button class="btn-toggle${heatModeState === "Nacht" ? " on" : ""}"
-              data-action="set-heat-mode" data-value="Nacht">
-        <ha-icon icon="mdi:weather-night"></ha-icon><span>Nacht</span>
-      </button>
-      <button class="btn-toggle${heatModeState === "Auto" ? " on" : ""}"
-              data-action="set-heat-mode" data-value="Auto">
-        <ha-icon icon="mdi:autorenew"></ha-icon><span>Auto</span>
-      </button>
+    <div class="split-col">
+      <div class="section-title">Heizmodus</div>
+      <div class="btn-col">
+        <button class="btn-list${heatModeState === "Tag" ? " on" : ""}"
+                data-action="set-heat-mode" data-value="Tag">
+          <ha-icon icon="mdi:weather-sunny"></ha-icon><span>Tag</span>
+        </button>
+        <button class="btn-list${heatModeState === "Nacht" ? " on" : ""}"
+                data-action="set-heat-mode" data-value="Nacht">
+          <ha-icon icon="mdi:weather-night"></ha-icon><span>Nacht</span>
+        </button>
+        <button class="btn-list${heatModeState === "Auto" ? " on" : ""}"
+                data-action="set-heat-mode" data-value="Auto">
+          <ha-icon icon="mdi:autorenew"></ha-icon><span>Auto</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -269,20 +276,6 @@ ${this._css()}
         <ha-icon icon="mdi:${outerOn ? "lightbulb-on" : "lightbulb-outline"}"></ha-icon>
         <span>EIN / AUS</span>
       </button>
-    </div>
-  </div>
-
-  <!-- Status -->
-  <div class="section">
-    <div class="section-title">Status</div>
-    <div class="readings">
-      <div class="reading">
-        <div class="reading-lbl">Zirkulation</div>
-        <div class="reading-val${circOn ? " on" : ""}">
-          <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
-          <span>${circOn ? "Läuft" : "Aus"}</span>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -419,7 +412,6 @@ ${this._css()}
   padding: 12px 16px;
   border-bottom: 1px solid var(--divider-color);
 }
-.section:last-of-type { border-bottom: none; }
 .section-title {
   font-size: .66rem; text-transform: uppercase; letter-spacing: .08em;
   color: var(--secondary-text-color); margin-bottom: 10px;
@@ -456,22 +448,51 @@ ${this._css()}
 }
 .btn-set:hover { opacity: .85; }
 .btn-set:active { opacity: .7; }
-.heating-badge {
-  display: inline-flex; align-items: center; gap: 5px; margin-top: 9px;
-  font-size: .78rem; color: var(--secondary-text-color);
-  padding: 4px 10px; border-radius: 20px;
-  background: var(--secondary-background-color); border: 1px solid var(--divider-color);
-  transition: color .3s, border-color .3s, background .3s;
+
+/* ── Status chips (Heizstatus + Zirkulation in Temperatur-Sektion) ── */
+.status-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .72rem; padding: 3px 9px; border-radius: 20px;
+  background: var(--secondary-background-color);
+  border: 1px solid var(--divider-color);
+  color: var(--secondary-text-color); transition: all .3s;
 }
-.heating-badge ha-icon { --mdc-icon-size: 16px; }
-.heating-badge.active {
-  color: var(--warning-color);
-  border-color: var(--warning-color);
+.chip ha-icon { --mdc-icon-size: 14px; }
+.chip.heating {
+  color: var(--warning-color); border-color: var(--warning-color);
   background: color-mix(in srgb, var(--warning-color) 8%, transparent);
 }
+.chip.circ-on {
+  color: var(--success-color); border-color: var(--success-color);
+  background: color-mix(in srgb, var(--success-color) 8%, transparent);
+}
 
-/* ── Toggle buttons ── */
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* ── Split layout (Pumpen & Gebläse | Heizmodus nebeneinander) ── */
+.split-section {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--divider-color);
+}
+.split-col { padding: 12px 16px; }
+.split-col + .split-col { border-left: 1px solid var(--divider-color); }
+.split-col .section-title { margin-bottom: 8px; }
+.btn-col { display: flex; flex-direction: column; gap: 6px; }
+.btn-list {
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  padding: 9px 10px; border-radius: 10px; width: 100%;
+  border: 1px solid var(--divider-color);
+  background: var(--secondary-background-color);
+  color: var(--secondary-text-color);
+  font-size: .78rem; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.btn-list ha-icon { --mdc-icon-size: 18px; flex-shrink: 0; }
+.btn-list.on {
+  background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  border-color: var(--primary-color); color: var(--primary-color);
+}
+.btn-list:active { transform: scale(.97); }
+
+/* ── Inline toggle buttons (Außenlicht) ── */
 .btn-toggle {
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   padding: 10px 12px; border-radius: 10px;
@@ -526,23 +547,6 @@ ${this._css()}
 
 /* ── Outer light ── */
 .outer-row { display: flex; align-items: center; gap: 12px; }
-
-/* ── Readings ── */
-.readings { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
-.reading {
-  background: var(--primary-background-color);
-  border-radius: 8px; padding: 8px 10px; border: 1px solid var(--divider-color);
-}
-.reading-lbl {
-  font-size: .63rem; text-transform: uppercase; letter-spacing: .06em;
-  color: var(--disabled-text-color); margin-bottom: 4px;
-}
-.reading-val {
-  font-size: .85rem; font-weight: 600; color: var(--secondary-text-color);
-  display: flex; align-items: center; gap: 4px;
-}
-.reading-val ha-icon { --mdc-icon-size: 16px; }
-.reading-val.on { color: var(--success-color); }
 
 /* ── Status bar ── */
 .status-bar {
