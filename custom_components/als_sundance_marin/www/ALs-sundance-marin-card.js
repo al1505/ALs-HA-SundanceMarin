@@ -5,7 +5,7 @@
 // Served automatically by the integration; no manual resource entry needed.
 // ============================================================================
 
-const SM_VERSION = "1.5.1";
+const SM_VERSION = "1.5.2";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -184,29 +184,26 @@ ${this._css()}
   <!-- Temperatur -->
   <div class="section">
     <div class="section-title">Temperatur</div>
+    <div class="temp-center">
+      <div class="temp-val">${curTemp != null ? curTemp.toFixed(1) + " °C" : "—"}</div>
+    </div>
     <div class="temp-row">
-      <div class="temp-block">
-        <div class="temp-val">${curTemp != null ? curTemp.toFixed(1) + "°C" : "—"}</div>
-        <div class="temp-lbl">Aktuell</div>
-      </div>
       <div class="sp-block">
         <div class="sp-ctrl">
           <button class="btn-round" data-action="adj-sp" data-value="-0.5">−</button>
-          <span class="sp-val">${displaySP != null ? displaySP.toFixed(1) + "°C" : "—"}</span>
+          <span class="sp-val">${displaySP != null ? displaySP.toFixed(1) + " °C" : "—"}</span>
           <button class="btn-round" data-action="adj-sp" data-value="0.5">+</button>
         </div>
         <button class="btn-set" data-action="send-set-temp">SET</button>
-        <div class="temp-lbl">Ziel</div>
       </div>
-      <!-- Heizstatus + Zirkulation — rechts neben der Temperaturauswahl -->
+      <span class="chip${circOn ? " circ-on" : ""}">
+        <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
+        <span>Zirkulation</span>
+      </span>
       <div class="status-col">
         <span class="chip${heatingOn ? " heating" : ""}">
           <ha-icon icon="mdi:${heatingOn ? "fire" : "check-circle-outline"}"></ha-icon>
           <span>${heatingOn ? "Heizt" : "Bereit"}</span>
-        </span>
-        <span class="chip${circOn ? " circ-on" : ""}">
-          <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
-          <span>Zirkulation</span>
         </span>
       </div>
     </div>
@@ -418,12 +415,12 @@ ${this._css()}
 }
 
 /* ── Temperature ── */
-.temp-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.temp-center { text-align: center; margin-bottom: 12px; }
 .temp-val {
   font-size: 2.4rem; font-weight: 700;
   color: var(--primary-color); font-variant-numeric: tabular-nums; line-height: 1;
 }
-.temp-lbl { font-size: .68rem; color: var(--secondary-text-color); margin-top: 3px; }
+.temp-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sp-block { display: flex; flex-direction: column; gap: 4px; }
 .sp-ctrl  { display: flex; align-items: center; gap: 8px; }
 .btn-round {
