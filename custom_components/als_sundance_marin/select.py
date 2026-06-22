@@ -44,4 +44,5 @@ class SundanceHeatMode(SundanceEntity, SelectEntity):
         value = HEAT_MODE_VALUES.get(option)
         if value is None:
             return
+        self.coordinator.set_optimistic("heat_mode_name", option)
         await self.coordinator.send_command(build_set_heat_mode(value))

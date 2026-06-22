@@ -74,12 +74,14 @@ class SundanceSwitch(SundanceEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         if not self.is_on:
+            self.coordinator.set_optimistic(self.entity_description.data_key, True)
             await self.coordinator.send_command(
                 build_toggle(self.entity_description.toggle_item)
             )
 
     async def async_turn_off(self, **kwargs) -> None:
         if self.is_on:
+            self.coordinator.set_optimistic(self.entity_description.data_key, False)
             await self.coordinator.send_command(
                 build_toggle(self.entity_description.toggle_item)
             )

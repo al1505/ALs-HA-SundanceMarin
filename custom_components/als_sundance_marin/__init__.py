@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
@@ -21,6 +22,27 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.SELECT,
 ]
+
+_CARD_JS = "ALs-sundance-marin-card.js"
+_CARD_URL = f"/{DOMAIN}/{_CARD_JS}"
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register the Lovelace card as a static frontend resource.
+
+    Called once when the domain first loads (before any config entries).
+    The card JS lives inside the component's www/ subfolder so HACS installs
+    it automatically alongside the integration.
+    """
+    card_path = hass.config.path(f"custom_components/{DOMAIN}/www/{_CARD_JS}")
+    if os.path.isfile(card_path):
+        hass.http.register_static_path(_CARD_URL, card_path, cache_headers=False)
+        from homeassistant.components import frontend as ha_frontend  # noqa: PLC0415
+        ha_frontend.add_extra_js_url(hass, _CARD_URL)
+        _LOGGER.info("Lovelace card registered at %s", _CARD_URL)
+    else:
+        _LOGGER.warning("Card JS not found at %s — skipping registration", card_path)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

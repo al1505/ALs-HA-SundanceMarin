@@ -35,7 +35,10 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         self._buf = b""
         self._reconnect_attempt = 0
         self._first_data_event = asyncio.Event()
-        # Optimistic state — not available in Balboa status frame
+        # Switch/select optimistic state — held until spa status confirms or 5 s expires.
+        # Prevents brief flicker when a status frame arrives before the spa acts on a command.
+        self._optimistic: dict[str, tuple] = {}  # key → (value, expiry_loop_time)
+        # Per-entity optimistic state not in the Balboa status frame:
         self.light_effect: str | None = None   # inner light color
         self.light2_on: bool = False            # outer light (no status frame bit)
         self.inner_brightness: int = 100        # inner light brightness % (last sent value)
@@ -78,6 +81,31 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
         """Wait until the first valid status frame has been parsed."""
         await self._first_data_event.wait()
 
+    def set_optimistic(self, key: str, value, duration: float = 5.0) -> None:
+        """Set key to value immediately and hold it for up to duration seconds.
+
+        Incoming status frames will not overwrite the key until the spa confirms
+        the new value OR the duration expires.  Gives immediate visual feedback
+        in the HA frontend without waiting for the next Balboa status frame.
+        """
+        self._optimistic[key] = (value, self.hass.loop.time() + duration)
+        if self.data is not None:
+            self.async_set_updated_data({**self.data, key: value})
+
+    def _apply_optimistic(self, status: dict) -> dict:
+        """Return status with active optimistic overrides applied; drop stale entries."""
+        now = self.hass.loop.time()
+        expired = [k for k, (_, exp) in self._optimistic.items() if now >= exp]
+        for k in expired:
+            del self._optimistic[k]
+        if not self._optimistic:
+            return status
+        merged = dict(status)
+        for k, (v, _) in self._optimistic.items():
+            if k in merged:
+                merged[k] = v
+        return merged
+
     # ── Reader loop ───────────────────────────────────────────────────────────
 
     async def _read_loop(self) -> None:
@@ -105,7 +133,7 @@ class SundanceCoordinator(DataUpdateCoordinator[dict]):
                     status = parse_status_frame(frame)
                     if status:
                         self._first_data_event.set()
-                        self.async_set_updated_data(status)
+                        self.async_set_updated_data(self._apply_optimistic(status))
 
         except asyncio.CancelledError:
             raise  # genuine cancellation (unload) — do not reconnect
