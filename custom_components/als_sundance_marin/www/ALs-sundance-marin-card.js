@@ -5,7 +5,7 @@
 // Served automatically by the integration; no manual resource entry needed.
 // ============================================================================
 
-const SM_VERSION = "1.5.2";
+const SM_VERSION = "1.5.3";
 
 console.info(
   `%c SUNDANCE MARIN CARD %c v${SM_VERSION} `,
@@ -184,23 +184,23 @@ ${this._css()}
   <!-- Temperatur -->
   <div class="section">
     <div class="section-title">Temperatur</div>
-    <div class="temp-center">
-      <div class="temp-val">${curTemp != null ? curTemp.toFixed(1) + " °C" : "—"}</div>
-    </div>
-    <div class="temp-row">
-      <div class="sp-block">
-        <div class="sp-ctrl">
-          <button class="btn-round" data-action="adj-sp" data-value="-0.5">−</button>
-          <span class="sp-val">${displaySP != null ? displaySP.toFixed(1) + " °C" : "—"}</span>
-          <button class="btn-round" data-action="adj-sp" data-value="0.5">+</button>
+    <div class="temp-split">
+      <div class="temp-left">
+        <div class="temp-val">${curTemp != null ? curTemp.toFixed(1) + " °C" : "—"}</div>
+        <div class="sp-block">
+          <div class="sp-ctrl">
+            <button class="btn-round" data-action="adj-sp" data-value="-0.5">−</button>
+            <span class="sp-val">${displaySP != null ? displaySP.toFixed(1) + " °C" : "—"}</span>
+            <button class="btn-round" data-action="adj-sp" data-value="0.5">+</button>
+          </div>
+          <button class="btn-set" data-action="send-set-temp">SET</button>
         </div>
-        <button class="btn-set" data-action="send-set-temp">SET</button>
       </div>
-      <span class="chip${circOn ? " circ-on" : ""}">
-        <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
-        <span>Zirkulation</span>
-      </span>
-      <div class="status-col">
+      <div class="temp-right">
+        <span class="chip${circOn ? " circ-on" : ""}">
+          <ha-icon icon="mdi:${circOn ? "rotate-360" : "circle-off-outline"}"></ha-icon>
+          <span>Zirkulation</span>
+        </span>
         <span class="chip${heatingOn ? " heating" : ""}">
           <ha-icon icon="mdi:${heatingOn ? "fire" : "check-circle-outline"}"></ha-icon>
           <span>${heatingOn ? "Heizt" : "Bereit"}</span>
@@ -414,13 +414,19 @@ ${this._css()}
   color: var(--secondary-text-color); margin-bottom: 10px;
 }
 
-/* ── Temperature ── */
-.temp-center { text-align: center; margin-bottom: 12px; }
+/* ── Temperature split (left: current + setpoint | right: status chips) ── */
+.temp-split { display: flex; align-items: stretch; }
+.temp-left  { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.temp-right {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 8px;
+  padding-left: 16px; margin-left: 16px;
+  border-left: 1px solid var(--divider-color);
+}
 .temp-val {
   font-size: 2.4rem; font-weight: 700;
   color: var(--primary-color); font-variant-numeric: tabular-nums; line-height: 1;
 }
-.temp-row { display: flex; align-items: center; gap: 12px; }
 .sp-block { display: flex; flex-direction: column; gap: 4px; }
 .sp-ctrl  { display: flex; align-items: center; gap: 8px; }
 .btn-round {
@@ -446,11 +452,6 @@ ${this._css()}
 .btn-set:hover { opacity: .85; }
 .btn-set:active { opacity: .7; }
 
-/* ── Status column (Heizstatus + Zirkulation rechts neben Temperaturauswahl) ── */
-.status-col {
-  display: flex; flex-direction: column; gap: 6px;
-  margin-left: auto; flex-shrink: 0; justify-content: center;
-}
 .chip {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: .72rem; padding: 3px 9px; border-radius: 20px;
