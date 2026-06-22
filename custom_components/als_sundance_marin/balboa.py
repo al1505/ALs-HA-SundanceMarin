@@ -130,7 +130,7 @@ def parse_status_frame(frame: bytes) -> dict | None:
         "set_temp":     raw_set / 2,
         "heating":      heating,
         "heat_mode":    heat_mode_idx,
-        "heat_mode_name": HEAT_MODE_NAMES[heat_mode_idx],
+        "heat_mode_name": HEAT_MODE_NAMES.get(heat_mode_idx, "?"),
         "pump1":        bool(d[OFF_PUMPS] & 0x02),
         "pump2":        bool((d[OFF_PUMPS] >> 2) & 0x03),
         "circ_pump":    bool((d[OFF_PUMP_STATUS] >> 3) & 0x03),
@@ -151,6 +151,17 @@ def build_set_temp(temp_c: float) -> bytes:
     """Build a privileged set-temperature command (M1=0x11, CRC-8)."""
     raw = max(20, min(84, round(temp_c * 2)))
     inner = bytes([0x06, 0x11, 0xBF, 0x20, raw])
+    return bytes([0x7E]) + inner + bytes([_crc8_privileged(inner), 0x7E])
+
+
+def build_set_heat_mode(mode_value: int) -> bytes:
+    """Build a privileged set-heat-mode command (M1=0x11, cmd=0xD2, CRC-8).
+
+    mode_value: 0=Auto, 1=Nacht, 2=Tag. Reads back in status frame d[6] & 0x03.
+    Verified live on the 880 2026-06-22 (e.g. value 2 -> 7e0611bfd202cf7e).
+    """
+    m = max(0, min(2, int(mode_value)))
+    inner = bytes([0x06, 0x11, 0xBF, 0xD2, m])
     return bytes([0x7E]) + inner + bytes([_crc8_privileged(inner), 0x7E])
 
 

@@ -48,7 +48,7 @@ Kürzere Frames (dlen=27) kommen von Topside-Panels und enthalten Nullwerte.
 | `d[13]` | Innenlicht | ≠ 0 → Innenlicht an | ✅ 2026-05-21: 0xFF wenn Licht an |
 | `d[14]` | Motor-Flags | Bits 2-3 = Gebläse-Speed ≠ 0 → Gebläse an | ✅ 2026-05-23: 0x00=alles aus, 0x4E=Gebläse an |
 | `d[6]` | Außenlicht | Bit 3 (0x08) → Außenlicht an | ⚠ Hypothese 2026-05-23: 0x02=aus✓, 0x0A=an✓, 0x02 bei pump1=an ohne light2✓ |
-| `d[15]` | Heizmodus | Bits 0-1: 0=Auto, 1=Nacht, 2=Smart | ✅ Verifiziert |
+| `d[6]`  | Heizmodus | Bits 0-1: 0=Auto, 1=Nacht, 2=Tag | ✅ Verifiziert live 880 2026-06-22 (d[15] war FALSCH/immer 0 am 880) |
 | `d[21]` | Zieltemperatur | `d[21] / 2` = °C | ✅ 2026-05-21: d[21]=0x4C → 76/2=38°C bestätigt |
 
 ### Achtung: Falsche Offsets in anderen Quellen
@@ -78,6 +78,14 @@ buildMessage(0x0A, 0xBF, [0x07, CODE])
 buildMessage(0x0A, 0xBF, [0x20, raw])
 raw = tempC * 2  (geclampet 20-84 = 10-42°C)
 ```
+
+### Heizmodus setzen (privilegiert, cmd=0xD2) — ✅ verifiziert live 880 2026-06-22
+```
+7E 06 11 BF D2 <mode> <crc8_privileged> 7E
+mode: 0=Auto, 1=Nacht, 2=Tag   (liest zurück in Status d[6] & 0x03)
+```
+Beispiele: Tag=`7e0611bfd202cf7e`, Nacht=`7e0611bfd201c67e`, Auto=`7e0611bfd200c17e`.
+SmartTub-„Smart" ist eine Zeitplan-Ebene, kein d[6]-Wert — nicht über diesen Befehl setzbar.
 
 ### Frame-Builder (Python-Äquivalent)
 ```python

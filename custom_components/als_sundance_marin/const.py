@@ -24,10 +24,15 @@ OFF_PUMPS        = 12  # bit 1 = pump1; bits 2-3 = pump2 speed
 OFF_LIGHT        = 13  # non-zero → Innenlicht on via physical button
 OFF_LIGHT_ST     = 24  # bit 2 (0x04) → Innenlicht on via SmartTub cmd=0x31 (verified 2026-05-25)
 OFF_MOTOR_FLAGS  = 14  # bits 2-3 = blower speed (>0 → on)
-OFF_HEAT_MODE    = 15  # bits 0-1: 0=Tag, 1=Nacht, 2=Smart
+OFF_HEAT_MODE    = 6   # bits 0-1: 0=Auto, 1=Nacht, 2=Tag (verified live 880, 2026-06-22)
 OFF_SET_TEMP     = 21  # raw/2 = °C
 
-HEAT_MODE_NAMES = ["Tag", "Nacht", "Smart", "Aus"]
+# Heat mode lives in status frame d[6] & 0x03 and is SET via cmd=0xD2 (privileged
+# 0x11 frame, payload = mode value). Verified on the live 880 2026-06-22.
+# ("Smart" in SmartTub is a schedule overlay, not a d[6] value — not exposed here.)
+HEAT_MODE_NAMES = {0: "Auto", 1: "Nacht", 2: "Tag"}   # d[6]&3 -> display name
+HEAT_MODE_VALUES = {name: val for val, name in HEAT_MODE_NAMES.items()}  # name -> d[6] value
+HEAT_MODE_OPTIONS = ["Tag", "Nacht", "Auto"]          # dropdown order in HA
 
 # Inner light color effects — verified from live RS-485 trace 2026-05-25
 LIGHT_EFFECTS = ["Rot", "Grün", "Hellblau", "Dunkelblau", "Violett", "Gelb", "Rainbow"]

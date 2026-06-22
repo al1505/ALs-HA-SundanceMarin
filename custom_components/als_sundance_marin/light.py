@@ -73,30 +73,40 @@ class SundanceInnerLight(SundanceEntity, LightEntity):
     async def async_turn_on(self, **kwargs) -> None:
         effect = kwargs.get(ATTR_EFFECT)
         brightness_ha = kwargs.get(ATTR_BRIGHTNESS)
-        currently_on = self.is_on
+
+        # On this spa (880) ONLY cmd 0x29 powers the light on; cmd 0x31 merely
+        # adjusts colour/brightness of an already-on light and does NOT switch it
+        # on (verified on live RS-485 2026-06-22). 0x29-ON is a discrete frame
+        # (d1=0x93), so re-sending it when already on is harmless — we send it
+        # unconditionally instead of trusting a possibly-stale is_on.
+        await self.coordinator.send_command(build_light_on())
+        if effect or brightness_ha is not None:
+            await asyncio.sleep(_COLOR_DELAY)
 
         if effect:
-            if not currently_on:
-                await self.coordinator.send_command(build_light_on())
-                await asyncio.sleep(_COLOR_DELAY)
             if effect == "Rainbow":
                 await self.coordinator.send_command(build_inner_light_rainbow())
             else:
                 await self.coordinator.send_command(build_inner_light_color(effect))
             self.coordinator.light_effect = effect
-        elif brightness_ha is not None:
+
+        if brightness_ha is not None:
             pct = round(brightness_ha / 255 * 100)
             await self.coordinator.send_command(build_inner_light_brightness(pct))
             self.coordinator.inner_brightness = pct
-            self.coordinator.light_effect = None
-        elif not currently_on:
-            pct = self.coordinator.inner_brightness or 100
-            await self.coordinator.send_command(build_inner_light_brightness(pct))
+            if not effect:
+                self.coordinator.light_effect = None
+
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
-        if self.is_on:
-            await self.coordinator.send_command(build_light_off())
-            self.coordinator.light_effect = None
+        # cmd 0x29-OFF (d1=0x13) is the only working OFF on this spa. Sent
+        # unconditionally: the old `if self.is_on` guard read a stale frozen
+        # state when the reader had died and silently dropped the command —
+        # that was the "Aus schaltet nicht aus" bug (verified 2026-06-22).
+        await self.coordinator.send_command(build_light_off())
+        self.coordinator.light_effect = None
+        self.async_write_ha_state()
 
 
 class SundanceOuterLight(SundanceEntity, LightEntity):

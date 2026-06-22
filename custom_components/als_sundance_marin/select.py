@@ -1,4 +1,4 @@
-"""Select entity — Heizmodus (read-only; no set command known)."""
+"""Select entity — Heizmodus (Auto / Nacht / Tag), settable via cmd=0xD2."""
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
@@ -6,7 +6,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, HEAT_MODE_NAMES
+from .balboa import build_set_heat_mode
+from .const import DOMAIN, HEAT_MODE_OPTIONS, HEAT_MODE_VALUES
 from .coordinator import SundanceCoordinator
 from .entity import SundanceEntity
 
@@ -19,16 +20,16 @@ async def async_setup_entry(
 
 
 class SundanceHeatMode(SundanceEntity, SelectEntity):
-    """Read-only select for the spa heat mode (Auto / Nacht / Smart).
+    """Spa heat mode (Auto / Nacht / Tag).
 
-    No set command is known for the Sundance Marin 780. The mode can only
-    be changed via the physical topside panel. Calling select_option() has
-    no effect and logs a warning.
+    State comes from status frame d[6] & 0x03; setting sends the privileged
+    cmd=0xD2 frame (verified live on the 880 2026-06-22). The SmartTub "Smart"
+    schedule overlay is not a d[6] value and is intentionally not exposed.
     """
 
     _attr_translation_key = "heat_mode"
     _attr_name = "Heizmodus"
-    _attr_options = HEAT_MODE_NAMES
+    _attr_options = HEAT_MODE_OPTIONS
 
     def __init__(self, coordinator: SundanceCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator, entry, "heat_mode")
@@ -40,6 +41,7 @@ class SundanceHeatMode(SundanceEntity, SelectEntity):
         return self.coordinator.data.get("heat_mode_name")
 
     async def async_select_option(self, option: str) -> None:
-        # No Balboa command known for changing heat mode remotely.
-        # The mode must be changed via the physical topside panel.
-        pass
+        value = HEAT_MODE_VALUES.get(option)
+        if value is None:
+            return
+        await self.coordinator.send_command(build_set_heat_mode(value))
