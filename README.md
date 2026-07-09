@@ -5,6 +5,8 @@ verbunden via **Elfin EW11** RS485-WiFi-Brücke.
 
 **Kein MQTT, kein externer Service** — die Integration läuft direkt in Home Assistant.
 
+[![PayPal](https://img.shields.io/badge/PayPal-Support-blue.svg?logo=paypal)](https://paypal.me/aloisschacherl)
+
 ---
 
 ## Projektziele
