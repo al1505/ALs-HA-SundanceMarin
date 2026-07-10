@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check_deploy_sync.sh",
+            "timeout": 10,
+            "statusMessage": "Pruefe Deploy-Sync (Repo vs. Live-HA)..."
+          }
+        ]
+      }
+    ]
+  }
+}
