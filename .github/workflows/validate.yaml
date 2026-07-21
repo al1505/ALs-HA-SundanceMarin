@@ -15,4 +15,3 @@ jobs:
           REPOSITORY_REF: ${{ github.ref_name }}
         with:
           category: integration
-          ignore: hacsjson integration_manifest
